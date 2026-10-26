@@ -17,6 +17,11 @@ export const profile = {
       detail: 'Advisor: Prof. Kazuhiro Nakadai',
     },
     {
+      role: 'B.S. in Computer Science',
+      place: 'Georgia Institute of Technology',
+      detail: 'Threads: Intelligence & People · Graduated with High Honor',
+    },
+    {
       role: 'Research Engineer Intern',
       place: 'AIRoA',
       detail: 'Real-robot VLA and RL research and engineering',
