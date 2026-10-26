@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../site.config';
+import { withBase } from '../lib/url';
+---
+
+<BaseLayout title={`Page not found · ${site.author.name}`} noindex>
+  <main id="main" class="mx-auto grid min-h-dvh max-w-page place-items-center px-5 sm:px-8">
+    <div class="max-w-md text-center">
+      <p class="eyebrow mb-4 text-accent">404</p>
+      <h1 class="text-4xl font-medium text-ink">This page doesn’t exist.</h1>
+      <p class="mt-4 text-ink-2">The link may be outdated. Everything lives on the main page.</p>
+      <a href={withBase('/')} class="link mt-8 inline-block">Go to {site.author.name}’s homepage</a>
+    </div>
+  </main>
+</BaseLayout>

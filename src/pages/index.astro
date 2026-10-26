@@ -1,0 +1,304 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import Hero from '../components/Hero.astro';
+import Trajectory from '../components/Trajectory.astro';
+import Section from '../components/Section.astro';
+import ResearchEntry from '../components/ResearchEntry.astro';
+import PublicationItem from '../components/PublicationItem.astro';
+import ExperienceItem from '../components/ExperienceItem.astro';
+import AuthorList from '../components/AuthorList.astro';
+import ResourceLinks from '../components/ResourceLinks.astro';
+import CvLink from '../components/CvLink.astro';
+import Icon from '../components/Icon.astro';
+import DevGapsPanel from '../components/DevGapsPanel.astro';
+
+import { site } from '../site.config';
+import { profile } from '../data/profile';
+import { projects, researchGroups } from '../data/research';
+import { patents, publications, publicationsNote } from '../data/publications';
+import { education, experience, honors, industrySummary, teaching } from '../data/experience';
+import { collectGaps } from '../lib/gaps';
+import { inline } from '../lib/text';
+import type { IconName } from '../lib/icons';
+
+// Resolve research groups; fail the build on typos instead of silently dropping a project.
+const groups = researchGroups.map((group) => ({
+  ...group,
+  projects: group.projectIds.map((id) => {
+    const project = projects.find((p) => p.id === id);
+    if (!project) throw new Error(`researchGroups: unknown project id "${id}"`);
+    return project;
+  }),
+}));
+
+const hasEqualContribution = publications.some((p) => (p.equalContribution ?? []).length > 0);
+
+type ContactRow = { label: string; value: string; href: string; icon: IconName };
+const allContactRows: ContactRow[] = [
+  { label: 'Email', value: site.contact.email, href: `mailto:${site.contact.email}`, icon: 'mail' },
+  { label: 'GitHub', value: site.contact.github.replace(/^https?:\/\//, ''), href: site.contact.github, icon: 'github' },
+  { label: 'Google Scholar', value: 'Google Scholar profile', href: site.contact.scholar, icon: 'scholar' },
+  { label: 'LinkedIn', value: site.contact.linkedin.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), href: site.contact.linkedin, icon: 'linkedin' },
+  { label: 'ORCID', value: site.contact.orcid.replace(/^https?:\/\//, ''), href: site.contact.orcid, icon: 'orcid' },
+];
+const contactRows = allContactRows.filter((row) => row.href);
+
+if (import.meta.env.PROD) {
+  const gaps = collectGaps();
+  const count = gaps.reduce((n, g) => n + g.items.length, 0);
+  if (count > 0) {
+    console.info(`\n[content] ${count} open content gaps (run \`npm run dev\` to see them in place; full list in the local CONTENT_GAPS.md).`);
+  }
+}
+
+let researchIndex = 0;
+---
+
+<BaseLayout>
+  <SiteHeader />
+
+  <main id="main">
+    <Hero />
+    <Trajectory />
+
+    <Section
+      id="research"
+      number="01"
+      title="Research"
+      wide
+      lead="Selected projects, described by the problem, the approach, and what I did."
+    >
+      <div class="space-y-16 sm:space-y-20">
+        {
+          groups.map((group) => (
+            <section aria-labelledby={`group-${group.id}`}>
+              <div class="mb-10 grid gap-x-12 gap-y-1 border-b border-rule pb-4 lg:grid-cols-[12rem_minmax(0,1fr)]">
+                <p class="eyebrow pt-1.5 text-ink-2" aria-hidden="true">
+                  {group.title}
+                </p>
+                <div>
+                  <h3 id={`group-${group.id}`} class="text-[1.25rem] leading-snug font-medium text-ink">
+                    <span class="sr-only">{group.title}: </span>
+                    {group.subtitle}
+                  </h3>
+                  <p class="mt-1 max-w-prose text-[0.92rem] leading-relaxed text-ink-3">{group.lead}</p>
+                </div>
+              </div>
+              <div class="space-y-14 sm:space-y-16">
+                {group.projects.map((project) => (
+                  <ResearchEntry project={project} index={researchIndex++} />
+                ))}
+              </div>
+            </section>
+          ))
+        }
+      </div>
+    </Section>
+
+    <Section id="publications" number="02" title="Publications">
+      <div class="mb-8 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-[0.85rem] text-ink-3">
+        <p>
+          My name is <strong class="font-semibold text-ink underline decoration-accent/50 underline-offset-[3px]">highlighted</strong>.
+          {hasEqualContribution && <> <span class="text-accent">*</span> denotes equal contribution.</>}
+        </p>
+        {
+          site.contact.scholar && (
+            <a class="link inline-flex items-center gap-1" href={site.contact.scholar} target="_blank" rel="noopener noreferrer">
+              Google Scholar <Icon name="external" class="size-3" />
+            </a>
+          )
+        }
+      </div>
+
+      {
+        publicationsNote && (
+          <p class="mb-10 flex items-start gap-2.5 border-l-2 border-rule-strong pl-3 text-[0.9rem] leading-relaxed text-ink-2">
+            <span>
+              <span class="font-medium text-ink">Some papers are not listed yet.</span> {publicationsNote}
+            </span>
+          </p>
+        )
+      }
+
+      <h3 class="eyebrow mb-5">Papers &amp; preprints</h3>
+      <ol class="list-none">
+        {publications.map((pub) => <PublicationItem pub={pub} />)}
+      </ol>
+
+      {
+        patents.length > 0 && (
+          <>
+            <h3 class="eyebrow mt-12 mb-5">Patent applications</h3>
+            <ul>
+              {patents.map((patent) => (
+                <li id={`pub-${patent.id}`} class="grid scroll-mt-28 gap-x-6 gap-y-2 sm:grid-cols-[9.25rem_minmax(0,1fr)]">
+                  <div class="flex items-center gap-2 sm:flex-col sm:items-start sm:gap-1 sm:pt-0.5">
+                    <span class="font-mono text-[0.78rem] font-medium text-accent">US {patent.year}</span>
+                    <span class="text-[0.72rem] tracking-wide text-ink-3 uppercase">Patent app.</span>
+                  </div>
+                  <div class="min-w-0">
+                    <h4 class="font-serif text-[1.08rem] leading-snug font-medium text-ink">{patent.title}</h4>
+                    <p class="mt-1.5 text-[0.9rem] leading-relaxed text-ink-2">
+                      <AuthorList authors={patent.inventors} />
+                    </p>
+                    <p class="mt-1 text-[0.9rem] text-ink-2">
+                      <em class="font-serif text-[0.98rem]">{patent.publication}</em>, {patent.year}.
+                    </p>
+                    <ResourceLinks links={patent.links} variant="compact" context={patent.title} class="mt-2.5" />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )
+      }
+    </Section>
+
+    <Section id="experience" number="03" title="Experience">
+      <h3 class="eyebrow mb-6">Research</h3>
+      <ol>
+        {experience.map((item) => <ExperienceItem item={item} />)}
+      </ol>
+
+      {
+        industrySummary && (
+          <>
+            <h3 class="eyebrow mt-12 mb-4">Industry</h3>
+            <p class="max-w-prose text-[0.95rem] leading-relaxed text-ink-2">{industrySummary}</p>
+          </>
+        )
+      }
+    </Section>
+
+    <Section id="education" number="04" title="Education">
+      <ol>
+        {
+          education.map((e) => (
+            <li class="grid gap-x-6 gap-y-1.5 border-b border-rule py-7 first:pt-0 last:border-b-0 sm:grid-cols-[9.25rem_minmax(0,1fr)]">
+              <p class="font-mono text-[0.75rem] leading-6 text-ink-3">{e.start ? `${e.start} – ${e.end}` : e.end}</p>
+              <div>
+                <h3 class="text-[1.2rem] leading-snug font-medium text-ink">{e.institution}</h3>
+                <p class="mt-0.5 text-[0.92rem] text-ink-2">
+                  <span class="font-medium text-ink">{e.degree}</span>, {e.field}
+                </p>
+                {e.advisor && <p class="mt-0.5 text-[0.86rem] text-ink-3">Advisor: {e.advisor}</p>}
+                {e.notes.length > 0 && (
+                  <p class="mt-0.5 text-[0.86rem] text-ink-3">{e.notes.join(' · ')}</p>
+                )}
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+
+      <div class="mt-12 grid gap-10 sm:grid-cols-2">
+        {
+          [
+            { title: 'Teaching', items: teaching },
+            { title: 'Honors', items: honors },
+          ].map((block) => (
+            <div>
+              <h3 class="eyebrow mb-4">{block.title}</h3>
+              <ul class="space-y-2.5 text-[0.92rem] text-ink-2">
+                {block.items.map((h) => (
+                  <li class="flex flex-col">
+                    <span>{h.text}</span>
+                    {h.year && <span class="font-mono text-[0.72rem] text-ink-3">{h.year}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </Section>
+
+    <Section id="about" number="05" title="About">
+      <div class="grid gap-12 xl:grid-cols-[minmax(0,1fr)_17rem]">
+        <div class="max-w-[40rem] space-y-5 font-serif text-[1.12rem] leading-[1.75] text-ink-2">
+          {profile.about.map((p) => <p set:html={inline(p)} />)}
+        </div>
+
+        <aside class="space-y-10" aria-label="Research interests and tools">
+          <div>
+            <h3 class="eyebrow mb-4">Research interests</h3>
+            <ul class="space-y-3.5">
+              {
+                profile.interests.map((interest) => (
+                  <li>
+                    <p class="text-[0.92rem] font-medium text-ink">{interest.title}</p>
+                    <p class="text-[0.84rem] leading-snug text-ink-3">{interest.text}</p>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+          <div>
+            <h3 class="eyebrow mb-4">Tools I work with</h3>
+            <dl class="space-y-3">
+              {
+                profile.skills.map((group) => (
+                  <div>
+                    <dt class="text-[0.84rem] font-medium text-ink">{group.label}</dt>
+                    <dd class="text-[0.84rem] leading-relaxed text-ink-3">{group.items.join(', ')}</dd>
+                  </div>
+                ))
+              }
+            </dl>
+          </div>
+        </aside>
+      </div>
+    </Section>
+
+    <Section id="contact" number="06" title="Contact">
+      <div class="grid gap-10 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div>
+          <p class="max-w-prose text-[1.02rem] leading-relaxed text-ink-2">
+            I am happy to talk about robot learning, manipulation, or my work. Email is the best way to reach me.
+          </p>
+          <a
+            href={`mailto:${site.contact.email}`}
+            class="mt-5 inline-block font-serif text-[1.5rem] break-all text-ink decoration-accent/40 decoration-1 underline-offset-[6px] hover:text-accent hover:underline sm:text-[1.9rem]"
+          >
+            {site.contact.email}
+          </a>
+          <ul class="mt-8 divide-y divide-rule border-y border-rule">
+            {
+              contactRows.slice(1).map((row) => (
+                <li>
+                  <a
+                    href={row.href}
+                    target="_blank"
+                    rel="noopener noreferrer me"
+                    class="group flex items-center justify-between gap-4 py-3 text-[0.93rem] text-ink-2 hover:text-accent"
+                  >
+                    <span class="flex items-center gap-3">
+                      <Icon name={row.icon} class="size-4 text-ink-3 group-hover:text-accent" />
+                      <span class="font-medium text-ink group-hover:text-accent">{row.label}</span>
+                    </span>
+                    <span class="flex min-w-0 items-center gap-1.5 truncate text-ink-3 group-hover:text-accent">
+                      <span class="truncate">{row.value}</span>
+                      <Icon name="external" class="size-3 shrink-0" />
+                    </span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+        <div class="flex flex-col items-start gap-3 md:items-end">
+          <CvLink variant="primary" />
+          <p class="flex items-center gap-1.5 text-[0.85rem] text-ink-3">
+            <Icon name="pin" class="size-3.5" />
+            {site.author.location}
+          </p>
+        </div>
+      </div>
+    </Section>
+  </main>
+
+  <SiteFooter />
+  <DevGapsPanel />
+</BaseLayout>

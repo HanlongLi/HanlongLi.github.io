@@ -1,0 +1,56 @@
+---
+import { trajectory } from '../data/profile';
+---
+
+<section aria-labelledby="trajectory-title" class="mx-auto max-w-page px-5 pb-16 sm:px-8 lg:pb-20">
+  <div class="mb-6 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+    <h2 id="trajectory-title" class="eyebrow text-ink-2">Research trajectory</h2>
+    <p class="text-[0.88rem] text-ink-3">
+      From multimodal perception and communication to real-world robot learning
+    </p>
+  </div>
+
+  <ol class="relative grid gap-0 lg:grid-cols-5 lg:border-t lg:border-rule-strong">
+    {
+      trajectory.map((stage, i) => {
+        const Tag = stage.projectId ? 'a' : 'div';
+        return (
+          <li class="relative">
+            <Tag
+              {...(stage.projectId ? { href: `#research-${stage.projectId}` } : {})}
+              class:list={[
+                'group relative block h-full border-b border-rule py-5 pr-4 pl-7 lg:border-b-0 lg:pt-7 lg:pr-5 lg:pl-0',
+                i < trajectory.length - 1 && 'lg:border-r lg:border-rule lg:pr-5',
+                i > 0 && 'lg:pl-5',
+                stage.projectId && 'transition-colors hover:bg-panel/70',
+              ]}
+            >
+              {/* Vertical rule on small screens, horizontal rule (the list border) on large ones */}
+              <span aria-hidden="true" class="absolute top-0 bottom-0 left-[4.5px] w-px bg-rule-strong lg:hidden" />
+              {/* Node on the timeline rule */}
+              <span
+                aria-hidden="true"
+                class:list={[
+                  'absolute top-[1.65rem] left-0 size-2.5 rounded-full border-2 lg:-top-[5.5px]',
+                  i > 0 && 'lg:left-5',
+                  stage.future ? 'border-accent bg-paper' : 'border-paper bg-accent',
+                ]}
+              />
+              <p class="font-mono text-[0.7rem] tracking-wider text-ink-3 uppercase">{stage.period}</p>
+              <p
+                class:list={[
+                  'mt-1.5 font-serif text-[1.08rem] leading-snug',
+                  stage.future ? 'text-accent italic' : 'text-ink group-hover:text-accent',
+                ]}
+              >
+                {stage.theme}
+              </p>
+              <p class="mt-1 text-[0.8rem] text-ink-3">{stage.context}</p>
+              <p class="mt-2.5 text-[0.86rem] leading-snug text-ink-2">{stage.takeaway}</p>
+            </Tag>
+          </li>
+        );
+      })
+    }
+  </ol>
+</section>

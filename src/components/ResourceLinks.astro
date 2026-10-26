@@ -1,0 +1,54 @@
+---
+import Icon from './Icon.astro';
+import { describeLink } from '../lib/links';
+import { isExternal, withBase } from '../lib/url';
+import type { ResourceLink } from '../data/types';
+
+interface Props {
+  links: ResourceLink[];
+  /** `buttons` for research entries, `compact` for citation lines. */
+  variant?: 'buttons' | 'compact';
+  /** Used to give each link an unambiguous accessible name. */
+  context?: string;
+  class?: string;
+}
+
+const { links, variant = 'buttons', context, class: className = '' } = Astro.props;
+---
+
+{
+  links.length > 0 && (
+    <ul class:list={['flex flex-wrap items-center', variant === 'compact' ? 'gap-x-3 gap-y-1' : 'gap-2', className]}>
+      {links.map((link) => {
+        const { label, icon } = describeLink(link);
+        const external = isExternal(link.href);
+        const href = external ? link.href : withBase(link.href);
+        return (
+          <li>
+            <a
+              href={href}
+              {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              aria-label={context ? `${label}: ${context}${external ? ' (opens in a new tab)' : ''}` : undefined}
+              class:list={[
+                'group inline-flex items-center transition-colors',
+                variant === 'buttons' &&
+                  'gap-1.5 rounded-md border border-rule-strong bg-paper px-2.5 py-1 text-[0.8rem] font-medium text-ink-2 hover:border-accent hover:text-accent',
+                variant === 'compact' &&
+                  'gap-1 text-[0.8rem] font-medium text-accent hover:text-accent-strong hover:underline underline-offset-4',
+              ]}
+            >
+              {variant === 'buttons' && <Icon name={icon} class="size-3.5 opacity-80" />}
+              <span>{label}</span>
+              {external && (
+                <Icon
+                  name="external"
+                  class="size-3 opacity-50 transition-transform group-hover:-translate-y-px group-hover:translate-x-px"
+                />
+              )}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  )
+}

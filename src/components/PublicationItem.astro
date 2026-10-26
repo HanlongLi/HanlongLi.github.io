@@ -1,0 +1,44 @@
+---
+import AuthorList from './AuthorList.astro';
+import ResourceLinks from './ResourceLinks.astro';
+import DevGaps from './DevGaps.astro';
+import { publicationStatusLabel, publicationTypeLabel } from '../data/publications';
+import { projectPageForPublication, projectPagePath } from '../data/projectPages';
+import type { Publication } from '../data/types';
+
+interface Props {
+  pub: Publication;
+}
+
+const { pub } = Astro.props;
+const status = pub.submittedTo ? `Under review at ${pub.submittedTo}` : publicationStatusLabel[pub.status];
+const page = projectPageForPublication(pub.id);
+const links = page ? [...pub.links, { kind: 'project' as const, href: projectPagePath(page) }] : pub.links;
+---
+
+<li id={`pub-${pub.id}`} class="grid scroll-mt-28 gap-x-6 gap-y-2 border-b border-rule py-6 first:pt-0 last:border-b-0 sm:grid-cols-[9.25rem_minmax(0,1fr)]">
+  <div class="flex items-center gap-2 sm:flex-col sm:items-start sm:gap-1 sm:pt-0.5">
+    <span class="font-mono text-[0.78rem] font-medium text-accent">{pub.venueShort}</span>
+    <span class="text-[0.72rem] tracking-wide text-ink-3 uppercase">{publicationTypeLabel[pub.type]}</span>
+  </div>
+
+  <div class="min-w-0">
+    <h4 class="font-serif text-[1.08rem] leading-snug font-medium text-ink">{pub.title}</h4>
+    <p class="mt-1.5 text-[0.9rem] leading-relaxed text-ink-2">
+      <AuthorList authors={pub.authors} equal={pub.equalContribution} />
+    </p>
+    <p class="mt-1 text-[0.9rem] leading-relaxed text-ink-2">
+      <cite class="font-serif text-[0.98rem] not-italic"><em>{pub.venue}</em></cite>{pub.details && <>, {pub.details}</>}, {pub.year}.
+      {
+        status && (
+          <span class="ml-1.5 inline-block rounded-sm bg-accent-soft px-1.5 py-px align-[1px] text-[0.72rem] font-medium text-accent-strong">
+            {status}
+          </span>
+        )
+      }
+    </p>
+    {pub.note && <p class="mt-1 text-[0.85rem] text-ink-3">{pub.note}</p>}
+    <ResourceLinks links={links} variant="compact" context={pub.title} class="mt-2.5" />
+    <DevGaps gaps={pub.gaps} />
+  </div>
+</li>

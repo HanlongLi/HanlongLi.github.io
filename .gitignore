@@ -1,0 +1,38 @@
+# build output
+dist/
+.astro/
+
+# dependencies
+node_modules/
+
+# logs & env
+npm-debug.log*
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# ---------------------------------------------------------------------------
+# Private material – never commit or deploy.
+# The academic CV in the project root is an INTERNAL DRAFT containing
+# unverified AIRoA metrics. Keep internal documents in `private/`.
+# Only a cleared, public version of the CV belongs in `public/cv/`.
+# ---------------------------------------------------------------------------
+private/
+*Internal_Draft*
+*internal-draft*
+*_internal.*
+
+# Unpublished project pages (e.g. papers under review). Rendered by `npm run dev` only.
+src/data/project-pages/*.draft.ts
+
+# Personal content checklist (mentions unpublished work). Kept locally only.
+CONTENT_GAPS.md
+
+# Regenerable previews from figure work (sources in ccfa-workfiles/**/source are kept)
+ccfa-workfiles/**/build/

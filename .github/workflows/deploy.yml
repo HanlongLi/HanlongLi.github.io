@@ -1,0 +1,72 @@
+# Builds the site and deploys it to GitHub Pages.
+#
+# Nothing is published until you (1) push this repository to GitHub and
+# (2) set Settings → Pages → Build and deployment → Source to "GitHub Actions".
+#
+# The site URL and base path come from the Pages configuration, so the same
+# workflow works for:
+#   - a user site            (repo named <username>.github.io → served at /)
+#   - a project site         (any other repo name             → served at /<repo>/)
+#   - a custom domain        (set in Settings → Pages         → served at /)
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run check
+
+      # `npm run build` also runs scripts/check-disclosure.mjs, which fails the
+      # job if unapproved internal material ends up in the output.
+      - name: Build
+        run: npm run build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

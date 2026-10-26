@@ -1,0 +1,72 @@
+---
+import { Picture } from 'astro:assets';
+import { getResearchImage } from '../lib/media';
+import type { ProjectFigure } from '../data/types';
+
+interface Props {
+  figure?: ProjectFigure | undefined;
+  /** Shown inside the placeholder until a real figure exists. */
+  keywords: string[];
+  title: string;
+  /** Short name set in large type inside the placeholder. */
+  label: string;
+  /** Position in the list; the first figure is loaded eagerly. */
+  index?: number;
+}
+
+const { figure, keywords, title, label, index = 1 } = Astro.props;
+const image = getResearchImage(figure?.file);
+---
+
+{
+  image && figure ? (
+    <figure>
+      <div class="overflow-hidden rounded-lg border border-rule bg-panel">
+        <Picture
+          src={image}
+          alt={figure.alt}
+          widths={[400, 640, 960, 1280]}
+          sizes="(min-width: 1024px) 520px, (min-width: 768px) 46vw, 100vw"
+          formats={['avif', 'webp']}
+          loading={index === 0 ? 'eager' : 'lazy'}
+          class="h-auto w-full"
+        />
+      </div>
+      {figure.caption && <figcaption class="mt-2 text-[0.8rem] leading-snug text-ink-3">{figure.caption}</figcaption>}
+    </figure>
+  ) : (
+    /*
+     * Neutral placeholder. It deliberately shows only words: no drawings
+     * that could be mistaken for experimental results.
+     */
+    <div
+      class="grid-paper relative flex aspect-[16/9] w-full md:aspect-[4/3] lg:aspect-[16/11] flex-col justify-between overflow-hidden rounded-lg border border-rule p-4"
+      role="img"
+      aria-label={`Key components of “${title}” (figure not yet available)`}
+    >
+      <div class="flex items-center justify-between">
+        <span class="eyebrow">Key components</span>
+        <span aria-hidden="true" class="flex gap-1">
+          <span class="size-1.5 rounded-full bg-rule-strong" />
+          <span class="size-1.5 rounded-full bg-rule-strong" />
+          <span class="size-1.5 rounded-full bg-accent/60" />
+        </span>
+      </div>
+      <p class="font-serif text-[1.6rem] leading-tight font-light text-ink/80 sm:text-[1.85rem] md:text-[1.4rem] lg:text-[1.85rem]" aria-hidden="true">
+        {label}
+      </p>
+      <ul class="flex flex-wrap gap-1.5" aria-hidden="true">
+        {keywords.map((k) => (
+          <li class="rounded border border-rule-strong/80 bg-paper/90 px-2 py-0.5 font-mono text-[0.68rem] text-ink-2">{k}</li>
+        ))}
+      </ul>
+      {import.meta.env.DEV && (
+        <span class="absolute inset-1 rounded-md border border-dashed border-accent/50" aria-hidden="true">
+          <span class="absolute top-1 right-1/2 translate-x-1/2 rounded bg-accent px-1.5 py-px font-mono text-[0.6rem] text-paper">
+            TODO figure
+          </span>
+        </span>
+      )}
+    </div>
+  )
+}

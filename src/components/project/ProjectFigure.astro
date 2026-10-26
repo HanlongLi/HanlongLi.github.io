@@ -1,0 +1,33 @@
+---
+import { Picture } from 'astro:assets';
+import { getProjectImage } from '../../lib/media';
+import type { ProjectImage } from '../../data/types';
+
+interface Props {
+  slug: string;
+  figure: ProjectImage;
+}
+
+const { slug, figure } = Astro.props;
+const img = getProjectImage(slug, figure.file);
+---
+
+{
+  img && (
+    <figure style="margin: 1.25rem 0 0;">
+      <Picture
+        src={img}
+        alt={figure.alt}
+        widths={[640, 960, 1400]}
+        sizes="(min-width: 960px) 768px, 100vw"
+        formats={['avif', 'webp']}
+        style="width: 100%; height: auto;"
+      />
+      {figure.caption && (
+        <figcaption class="is-size-6 has-text-justified has-text-grey-dark" style="margin-top: 8px;">
+          {figure.caption}
+        </figcaption>
+      )}
+    </figure>
+  )
+}

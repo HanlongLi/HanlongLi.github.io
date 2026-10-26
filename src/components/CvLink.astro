@@ -1,0 +1,31 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../site.config';
+import { hasPublicCv } from '../lib/cv';
+import { withBase } from '../lib/url';
+
+interface Props {
+  variant?: 'primary' | 'nav';
+}
+
+const { variant = 'primary' } = Astro.props;
+---
+
+<a
+  href={withBase(site.cv.path)}
+  type="application/pdf"
+  class:list={[
+    'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors',
+    variant === 'primary' &&
+      'bg-ink px-4 py-2.5 text-sm text-paper hover:bg-accent-strong focus-visible:bg-accent-strong',
+    variant === 'nav' && 'border border-ink/80 px-3 py-1 text-sm text-ink hover:border-accent hover:bg-accent hover:text-paper',
+  ]}
+>
+  <Icon name="file" class="size-4" />
+  <span>CV</span>
+  {
+    hasPublicCv && site.cv.updated && variant === 'primary' && (
+      <span class="font-mono text-[0.7rem] font-normal text-paper/70">{site.cv.updated}</span>
+    )
+  }
+</a>

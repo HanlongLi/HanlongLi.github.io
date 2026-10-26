@@ -1,0 +1,31 @@
+---
+import { site } from '../site.config';
+
+interface Props {
+  authors: string[];
+  equal?: string[] | undefined;
+}
+
+const { authors, equal = [] } = Astro.props;
+const me = new Set<string>(site.author.citationNames);
+---
+
+<span>
+  {
+    authors.map((name, i) => (
+      <>
+        {me.has(name) ? (
+          <strong class="font-semibold text-ink underline decoration-accent/50 decoration-1 underline-offset-[3px]">{name}</strong>
+        ) : (
+          <span>{name}</span>
+        )}
+        {equal.includes(name) && (
+          <sup class="ml-px text-accent" title="Equal contribution">
+            *
+          </sup>
+        )}
+        {i < authors.length - 1 && ', '}
+      </>
+    ))
+  }
+</span>

@@ -1,0 +1,107 @@
+---
+import '../styles/global.css';
+import interLatin from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import serifLatin from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-wght-normal.woff2?url';
+import { site } from '../site.config';
+import { withBase } from '../lib/url';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Path inside `public/` for the social card image. */
+  image?: string;
+  noindex?: boolean;
+}
+
+const {
+  title = site.title,
+  description = site.description,
+  image = site.ogImage,
+  noindex = false,
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(withBase(image), Astro.site);
+
+const sameAs = [
+  site.contact.github,
+  site.contact.scholar,
+  site.contact.linkedin,
+  site.contact.orcid,
+  site.contact.x,
+].filter(Boolean);
+
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.author.name,
+  alternateName: site.author.alias || undefined,
+  url: new URL(withBase('/'), Astro.site).href,
+  email: `mailto:${site.contact.email}`,
+  jobTitle: 'Graduate Researcher',
+  affiliation: [
+    { '@type': 'CollegeOrUniversity', name: 'Institute of Science Tokyo' },
+    { '@type': 'Organization', name: 'AIRoA' },
+  ],
+  alumniOf: { '@type': 'CollegeOrUniversity', name: 'Georgia Institute of Technology' },
+  knowsAbout: [
+    'Robot manipulation learning',
+    'Reinforcement learning',
+    'Imitation learning',
+    'Vision-language-action models',
+    'Embodied AI',
+  ],
+  sameAs,
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={site.author.name} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content="#faf8f3" />
+    <meta name="generator" content={Astro.generator} />
+
+    <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={withBase('favicon-32.png')} sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href={withBase('apple-touch-icon.png')} />
+    <link rel="sitemap" href={withBase('sitemap-index.xml')} />
+
+    <link rel="preload" href={interLatin} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={serifLatin} as="font" type="font/woff2" crossorigin />
+
+    <meta property="og:type" content="profile" />
+    <meta property="og:site_name" content={site.author.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.author.name}: robot learning, manipulation and embodied AI`} />
+    <meta property="og:locale" content={site.locale} />
+    <meta property="profile:first_name" content="Hanlong" />
+    <meta property="profile:last_name" content="Li" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+  </head>
+  <body class="min-h-dvh">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:text-paper"
+    >
+      Skip to content
+    </a>
+    <slot />
+  </body>
+</html>

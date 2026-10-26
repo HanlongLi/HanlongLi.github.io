@@ -1,0 +1,159 @@
+---
+import Icon from './Icon.astro';
+import CvLink from './CvLink.astro';
+import { site } from '../site.config';
+import { showMisc } from '../data/misc';
+import { withBase } from '../lib/url';
+
+interface Props {
+  /** Which page is rendering the header. Section links are anchors on the home page only. */
+  current?: 'home' | 'misc';
+}
+
+const { current = 'home' } = Astro.props;
+const onHome = current === 'home';
+const home = withBase('/');
+
+const sections = [
+  { id: 'research', label: 'Research' },
+  { id: 'publications', label: 'Publications' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'education', label: 'Education' },
+  { id: 'about', label: 'About' },
+  { id: 'contact', label: 'Contact' },
+];
+
+type NavItem = { label: string; href: string; spy?: string; isCurrentPage?: boolean };
+const navItems: NavItem[] = [
+  ...sections.map((s) => ({ label: s.label, href: onHome ? `#${s.id}` : `${home}#${s.id}`, spy: onHome ? s.id : undefined })),
+  ...(showMisc ? [{ label: 'Misc', href: withBase('misc/'), isCurrentPage: current === 'misc' }] : []),
+];
+---
+
+<header
+  id="site-header"
+  class="sticky top-0 z-40 border-b border-transparent bg-paper transition-[border-color] duration-200 data-[scrolled=true]:border-rule"
+>
+  <div class="mx-auto flex h-(--header-h) max-w-page items-center justify-between gap-6 px-5 sm:px-8">
+    <a href={onHome ? '#top' : home} class="font-serif text-[1.15rem] font-semibold tracking-tight text-ink hover:text-accent">
+      {site.author.name}
+    </a>
+
+    <nav aria-label="Primary" class="hidden lg:block">
+      <ul class="flex items-center gap-1">
+        {
+          navItems.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                data-nav-link={item.spy}
+                aria-current={item.isCurrentPage ? 'page' : undefined}
+                class="relative rounded-md px-3 py-1.5 text-sm text-ink-2 transition-colors hover:text-ink aria-[current]:text-accent aria-[current]:after:absolute aria-[current]:after:inset-x-3 aria-[current]:after:-bottom-px aria-[current]:after:h-px aria-[current]:after:bg-accent"
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        <li class="ml-3">
+          <CvLink variant="nav" />
+        </li>
+      </ul>
+    </nav>
+
+    <button
+      type="button"
+      id="menu-toggle"
+      class="group -mr-2 inline-flex items-center gap-2 rounded-md px-2 py-2 text-sm text-ink-2 hover:text-ink lg:hidden"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+    >
+      <span class="sr-only" data-menu-label>Open menu</span>
+      <Icon name="menu" class="size-5 group-aria-expanded:hidden" />
+      <Icon name="close" class="hidden size-5 group-aria-expanded:block" />
+    </button>
+  </div>
+
+  <nav
+    id="mobile-menu"
+    aria-label="Primary (mobile)"
+    class="hidden border-t border-rule bg-paper lg:hidden"
+  >
+    <ul class="mx-auto max-w-page px-5 py-3 sm:px-8">
+      {
+        navItems.map((item) => (
+          <li>
+            <a
+              href={item.href}
+              data-nav-link={item.spy}
+              aria-current={item.isCurrentPage ? 'page' : undefined}
+              class="flex items-center justify-between border-b border-rule/70 py-3 font-serif text-lg text-ink aria-[current]:text-accent"
+            >
+              {item.label}
+              <Icon name="arrow-right" class="size-4 text-ink-3" />
+            </a>
+          </li>
+        ))
+      }
+      <li class="pt-4 pb-2">
+        <CvLink variant="primary" />
+      </li>
+    </ul>
+  </nav>
+</header>
+
+<script>
+  const header = document.getElementById('site-header');
+  const toggle = document.getElementById('menu-toggle');
+  const menu = document.getElementById('mobile-menu');
+  const label = toggle?.querySelector('[data-menu-label]');
+
+  // Border under the header once the page has scrolled.
+  const onScroll = () => header?.setAttribute('data-scrolled', String(window.scrollY > 8));
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Mobile menu.
+  const setOpen = (open: boolean) => {
+    if (!toggle || !menu) return;
+    toggle.setAttribute('aria-expanded', String(open));
+    menu.classList.toggle('hidden', !open);
+    if (label) label.textContent = open ? 'Close menu' : 'Open menu';
+  };
+  toggle?.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  menu?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) setOpen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && toggle?.getAttribute('aria-expanded') === 'true') {
+      setOpen(false);
+      toggle.focus();
+    }
+  });
+  window.matchMedia('(min-width: 64rem)').addEventListener('change', (e) => e.matches && setOpen(false));
+
+  // Highlight the nav item of the section currently in view.
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]'));
+  const sections = Array.from(new Set(links.map((l) => l.dataset.navLink)))
+    .map((id) => (id ? document.getElementById(id) : null))
+    .filter((el): el is HTMLElement => el !== null);
+
+  const setCurrent = (id: string | null) => {
+    for (const link of links) {
+      if (link.dataset.navLink === id) link.setAttribute('aria-current', 'true');
+      else link.removeAttribute('aria-current');
+    }
+  };
+
+  const visible = new Map<string, number>();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) visible.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0);
+      // The first section (in document order) that is meaningfully visible wins.
+      const current = sections.find((s) => (visible.get(s.id) ?? 0) > 0);
+      setCurrent(current ? current.id : null);
+    },
+    { rootMargin: '-35% 0px -55% 0px', threshold: [0, 0.01] },
+  );
+  sections.forEach((s) => observer.observe(s));
+</script>

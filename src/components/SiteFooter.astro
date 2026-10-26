@@ -1,0 +1,21 @@
+---
+import Icon from './Icon.astro';
+import { site } from '../site.config';
+import { showMisc } from '../data/misc';
+import { withBase } from '../lib/url';
+
+const updated = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+---
+
+<footer class="border-t border-rule">
+  <div class="mx-auto flex max-w-page flex-col gap-3 px-5 py-8 text-[0.82rem] text-ink-3 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+    <p>© {new Date().getFullYear()} {site.author.name} · Last updated {updated}</p>
+    <div class="flex items-center gap-5">
+      {showMisc && <a href={withBase('misc/')} class="hover:text-accent">Outside the lab</a>}
+      <a href="#top" class="inline-flex items-center gap-1.5 hover:text-accent">
+        <Icon name="arrow-up" class="size-3.5" />
+        Back to top
+      </a>
+    </div>
+  </div>
+</footer>

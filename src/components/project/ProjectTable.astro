@@ -1,0 +1,27 @@
+---
+import type { ProjectTable } from '../../data/types';
+
+interface Props {
+  table: ProjectTable;
+}
+
+const { table } = Astro.props;
+---
+
+<div class="table-container" style="margin-top: 1rem;">
+  <table class="table is-striped is-narrow is-hoverable is-fullwidth is-size-6">
+    <thead>
+      <tr>{table.columns.map((c) => <th>{c}</th>)}</tr>
+    </thead>
+    <tbody>
+      {
+        table.rows.map((row) => (
+          <tr>
+            {row.map((cell, i) => (i === 0 ? <td class="has-text-left">{cell}</td> : <td>{cell}</td>))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>
+{table.caption && <p class="is-size-7 has-text-justified has-text-grey-dark">{table.caption}</p>}

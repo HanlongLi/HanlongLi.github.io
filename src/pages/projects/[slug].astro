@@ -1,0 +1,395 @@
+---
+/**
+ * Project page template.
+ *
+ * Reproduces the original Talking Robot page (thetalkingrobot.netlify.app):
+ * the Nerfies academic-project-page structure on plain Bulma 0.9.3, with the
+ * same classes and inline styles. One page per file in
+ * `src/data/project-pages/` (see `_template.ts`).
+ *
+ * Page template adapted from Nerfies (https://github.com/nerfies/nerfies.github.io),
+ * licensed CC BY-SA 4.0.
+ */
+import { Picture } from 'astro:assets';
+import ProjectLayout from '../../layouts/ProjectLayout.astro';
+import ProjectFigure from '../../components/project/ProjectFigure.astro';
+import ProjectTableView from '../../components/project/ProjectTable.astro';
+import { site } from '../../site.config';
+import { draftSlugs, projectPages } from '../../data/projectPages';
+import { getProjectImage } from '../../lib/media';
+import { faSvg, projectLinkStyle } from '../../lib/fontawesome';
+import { inline } from '../../lib/text';
+import { isExternal, withBase } from '../../lib/url';
+import type { ProjectPage } from '../../data/types';
+
+export function getStaticPaths() {
+  return projectPages.map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+interface Props {
+  page: ProjectPage;
+}
+
+const { page } = Astro.props;
+const media = (src: string) => (isExternal(src) ? src : withBase(src));
+const image = (file: string) => getProjectImage(page.slug, file);
+const affiliations = page.affiliations ?? [];
+const marker = (index: number) => affiliations[index - 1]?.marker ?? String(index);
+const authorMarks = (a: ProjectPage['authors'][number]) =>
+  [...(a.affiliations ?? []).map(marker), ...(a.equal ? ['‡'] : []), ...(a.corresponding ? ['*'] : [])].join(',');
+const homeLink = page.homeLink ?? true;
+const isDraft = draftSlugs.has(page.slug);
+const teaser = page.teaser ? image(page.teaser.file) : undefined;
+---
+
+<ProjectLayout title={page.title} description={page.description}>
+  {
+    isDraft && (
+      <div class="notification is-warning is-light has-text-centered" style="margin: 0; border-radius: 0;">
+        <strong>Draft, not published.</strong> This page renders in <code>npm run dev</code> only. Rename
+        <code>{page.slug}.draft.ts</code> to <code>{page.slug}.ts</code> to publish it.
+      </div>
+    )
+  }
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">{page.title}</h1>
+            {page.venue && <p class="is-size-5 has-text-grey">{page.venue}</p>}
+
+            <div class="is-size-5 publication-authors">
+              {
+                page.authors.map((author, i) => {
+                  const marks = authorMarks(author);
+                  const sep = i < page.authors.length - 1 ? ',' : '';
+                  return (
+                    <span class="author-block">
+                      {author.url ? (
+                        <a href={author.url} target="_blank" rel="noopener noreferrer">
+                          {author.name}
+                        </a>
+                      ) : (
+                        author.name
+                      )}
+                      {marks && <sup>{marks}</sup>}
+                      {sep}{' '}
+                    </span>
+                  );
+                })
+              }
+            </div>
+
+            {
+              affiliations.map((aff, i) => (
+                <div class="is-size-5 publication-authors" style="margin-top: 15px;">
+                  <span class="author-block">
+                    <sup>{marker(i + 1)}</sup>
+                    {aff.name}
+                  </span>
+                  {aff.emails && aff.emails.length > 0 && (
+                    <>
+                      <br />
+                      <span class="author-block is-size-7">{`{${aff.emails.join(', ')}}`}</span>
+                    </>
+                  )}
+                </div>
+              ))
+            }
+
+            {
+              page.notes && page.notes.length > 0 && (
+                <div class="is-size-6 publication-authors" style="margin-top: 10px;">
+                  {page.notes.map((note) => (
+                    <span class="author-block">{note} </span>
+                  ))}
+                </div>
+              )
+            }
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                {
+                  page.links.map((link) => {
+                    const { label, icon } = projectLinkStyle(link.kind, link.href);
+                    const external = isExternal(link.href);
+                    return (
+                      <span class="link-block">
+                        <a
+                          href={external || link.href.startsWith('#') ? link.href : withBase(link.href)}
+                          class="external-link button is-normal is-rounded is-dark"
+                          {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                        >
+                          <span class="icon" set:html={faSvg(icon)} />
+                          <span>{link.label ?? label}</span>
+                        </a>
+                      </span>
+                    );
+                  })
+                }
+              </div>
+            </div>
+
+            {!page.teaser && page.tldr && <h2 class="subtitle has-text-centered" set:html={inline(page.tldr)} />}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {
+    page.teaser && teaser && (
+      <section class="hero teaser">
+        <div class="container is-max-desktop">
+          <div class="hero-body">
+            <Picture
+              src={teaser}
+              alt={page.teaser.alt}
+              widths={[640, 960, 1400, 2000]}
+              sizes="(min-width: 960px) 960px, 100vw"
+              formats={['avif', 'webp']}
+              loading="eager"
+              style="width: 100%; height: auto;"
+            />
+            {page.teaser.caption && (
+              <p class="is-size-6 has-text-justified" style="margin-top: 10px;">
+                {page.teaser.caption}
+              </p>
+            )}
+            {page.tldr && (
+              <h2 class="subtitle has-text-centered" style="margin-top: 1.25rem;" set:html={inline(page.tldr)} />
+            )}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    page.sections.map((section) => (
+      <section class="section" id={section.id}>
+        <div class="container is-max-desktop">
+          {section.kind === 'text' && (
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="title is-3">{section.title}</h2>
+                {(section.paragraphs || section.list) && (
+                  <div class="content has-text-justified">
+                    {section.paragraphs?.map((p) => (
+                      <p set:html={inline(p)} />
+                    ))}
+                    {section.list && (
+                      <ul>
+                        {section.list.map((item) => (
+                          <li set:html={inline(item)} />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+                {section.subsections?.map((sub) => (
+                  <div style="margin-top: 2rem;">
+                    <h3 class="title is-4">{sub.title}</h3>
+                    {(sub.paragraphs || sub.list) && (
+                      <div class="content has-text-justified">
+                        {sub.paragraphs?.map((p) => (
+                          <p set:html={inline(p)} />
+                        ))}
+                        {sub.list && (
+                          <ul>
+                            {sub.list.map((item) => (
+                              <li set:html={inline(item)} />
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                    {sub.table && <ProjectTableView table={sub.table} />}
+                    {sub.figure && <ProjectFigure slug={page.slug} figure={sub.figure} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {section.kind === 'stats' && (
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-four-fifths">
+                <h2 class="title is-3">{section.title}</h2>
+                <nav class="level is-mobile" style="flex-wrap: wrap; gap: 1.5rem;">
+                  {section.items.map((item) => (
+                    <div class="level-item has-text-centered">
+                      <div>
+                        <p class="title is-4">{item.value}</p>
+                        <p class="heading">{item.label}</p>
+                      </div>
+                    </div>
+                  ))}
+                </nav>
+                {section.note && <p class="is-size-7 has-text-grey">{section.note}</p>}
+              </div>
+            </div>
+          )}
+
+          {section.kind === 'video' && (
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-full-width">
+                <h2 class="title is-3">{section.title}</h2>
+                <div class="publication-video">
+                  {section.youtube ? (
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${section.youtube}`}
+                      title={`${section.title}: ${page.title}`}
+                      loading="lazy"
+                      allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                    />
+                  ) : (
+                    section.src && (
+                      <video
+                        controls
+                        playsinline
+                        preload="metadata"
+                        {...(section.poster ? { poster: media(section.poster) } : {})}
+                      >
+                        <source src={media(section.src)} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    )
+                  )}
+                </div>
+                {section.caption && <p class="is-size-6 has-text-grey" style="margin-top: 10px;">{section.caption}</p>}
+              </div>
+            </div>
+          )}
+
+          {section.kind === 'figure' &&
+            (() => {
+              const img = image(section.file);
+              return (
+                img && (
+                  <div class="columns is-centered has-text-centered">
+                    <div class="column is-full-width">
+                      <h2 class="title is-3">{section.title}</h2>
+                      <Picture
+                        src={img}
+                        alt={section.alt}
+                        widths={[640, 960, 1400]}
+                        sizes="(min-width: 960px) 960px, 100vw"
+                        formats={['avif', 'webp']}
+                        style="width: 100%; height: auto;"
+                      />
+                      {section.caption && <p class="content has-text-justified">{section.caption}</p>}
+                    </div>
+                  </div>
+                )
+              );
+            })()}
+
+          {section.kind === 'gallery' && (
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-full-width">
+                <h2 class="title is-3">{section.title}</h2>
+                {section.intro && (
+                  <div class="content has-text-justified">
+                    <p>{section.intro}</p>
+                  </div>
+                )}
+                <div class="columns is-multiline is-centered">
+                  {section.items.map((item) => {
+                    const img = image(item.file);
+                    return (
+                      img && (
+                        <div class="column is-one-third-desktop is-half-tablet has-text-centered">
+                          <Picture
+                            src={img}
+                            alt={item.alt}
+                            widths={[400, 640, 900]}
+                            sizes="(min-width: 1024px) 320px, (min-width: 769px) 50vw, 100vw"
+                            formats={['avif', 'webp']}
+                            style="width: 100%; height: auto;"
+                          />
+                          {item.caption && <p class="is-size-6">{item.caption}</p>}
+                        </div>
+                      )
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {section.kind === 'audio' && (
+            <div class="columns is-centered has-text-centered">
+              <div class="column is-full-width">
+                <h2 class="title is-3">{section.title}</h2>
+                {section.intro && (
+                  <div class="content has-text-justified">
+                    <p>{section.intro}</p>
+                  </div>
+                )}
+                <div class="columns is-multiline is-centered">
+                  {section.items.map((item) => (
+                    <div class="column is-one-quarter-desktop is-one-third-tablet is-half-mobile has-text-centered">
+                      <p>
+                        <strong>{item.label}</strong>
+                      </p>
+                      {item.transcript && (
+                        <p class="is-size-6" style="margin-bottom: 8px; font-style: italic;">
+                          "{item.transcript}"
+                        </p>
+                      )}
+                      <audio controls preload="metadata" style="width: 100%;">
+                        <source src={media(item.src)} type="audio/wav" />
+                        Your browser does not support the audio element.
+                      </audio>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+    ))
+  }
+
+  {
+    page.bibtex && (
+      <section class="section" id="BibTeX">
+        <div class="container is-max-desktop content">
+          <h2 class="title">BibTeX</h2>
+          <pre><code>{page.bibtex}</code></pre>
+        </div>
+      </section>
+    )
+  }
+
+  <footer class="footer">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-8">
+          <div class="content">
+            <p>
+              This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"
+                >Creative Commons Attribution-ShareAlike 4.0 International License</a
+              >.
+            </p>
+            <p>
+              Page template adapted from <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a>.
+              {
+                homeLink && (
+                  <>
+                    {' '}
+                    Back to <a href={withBase('/')}>{site.author.name}’s homepage</a>.
+                  </>
+                )
+              }
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</ProjectLayout>

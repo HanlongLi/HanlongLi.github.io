@@ -1,0 +1,21 @@
+---
+/**
+ * Lists known content gaps next to the entry they belong to.
+ * Rendered only by `npm run dev`; never part of the production build.
+ */
+interface Props {
+  gaps?: string[] | undefined;
+}
+
+const { gaps = [] } = Astro.props;
+---
+
+{
+  import.meta.env.DEV && gaps.length > 0 && (
+    <ul class="mt-4 space-y-1 rounded-md border border-dashed border-accent/50 bg-accent-soft/40 px-3 py-2 font-mono text-[0.7rem] text-accent-strong">
+      {gaps.map((g) => (
+        <li>TODO · {g}</li>
+      ))}
+    </ul>
+  )
+}
